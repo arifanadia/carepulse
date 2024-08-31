@@ -22,6 +22,8 @@ import FileUploader from "../FileUploader"
 
 
 const RegisterForm = ({ user }: { user: User }) => {
+
+
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
 
@@ -54,19 +56,18 @@ const RegisterForm = ({ user }: { user: User }) => {
 
         try {
             const patientData = {
-                ...values,
                 userId: user.$id,
+                ...values,
                 birthDate: new Date(values.birthDate),
                 IdentificationDocument: formData
 
             };
-            console.log(user.$id);
-            
+    
 
-            console.log("Patient Data:", patientData); // Check if userId is included
 
-            // @ts-ignore
+
             const patient = await registerPatient(patientData);
+
 
             if (patient) {
                 router.push(`/patients/${user.$id}/new-appointment`);

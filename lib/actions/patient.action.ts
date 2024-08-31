@@ -33,9 +33,9 @@ export const createUser = async (user: CreateUserParams) => {
     }
 }
 
-export const getUser = (userId: string) => {
+export const getUser = async(userId: string) => {
     try {
-        const user = users.get(userId);
+        const user = await users.get(userId);
 
         return parseStringify(user)
 
@@ -52,25 +52,27 @@ export const registerPatient = async ({ identificationDocument, ...patient }: Re
         if (identificationDocument instanceof FormData) {
             const blobFile = identificationDocument.get("blobFile") as Blob;
             const fileName = identificationDocument.get("fileName") as string;
-        
+
             if (blobFile && fileName) {
                 const inputFile = InputFile.fromBuffer(blobFile, fileName);
                 file = await storage.createFile(BUCKET_ID!, ID.unique(), inputFile);
             }
         }
-        
+
 
         const newPatient = await databases.createDocument(
             DATABASE_ID!,
             PATIENT_COLLECTION_ID!,
             ID.unique(),
             {
-                identificationDocumentId: file?.$id || null,
-                identificationDocumentUrl: `${ENDPOINT}/storage/buckets/${BUCKET_ID}/files/${file?.$id}/view?project/${PROJECT_ID}`,
-                ...patient
-
+                identificationDocumentId: file?.$id ? file.$id : null,
+                identificationDocumentUrl: file?.$id
+                    ? `${ENDPOINT}/storage/buckets/${BUCKET_ID}/files/${file.$id}/view??project=${PROJECT_ID}`
+                    : null,
+                ...patient,
             }
         )
+        console.log(newPatient);
 
         return parseStringify(newPatient)
     } catch (error) {
