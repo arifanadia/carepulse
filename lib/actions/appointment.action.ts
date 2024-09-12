@@ -1,10 +1,11 @@
 "use server"
 
 import { ID, Query } from "node-appwrite";
-import { DATABASE_ID, databases, APPOINTMENT_COLLECTION_ID } from "../appwrite.config";
-import { parseStringify } from "../utils";
+import { DATABASE_ID, databases, APPOINTMENT_COLLECTION_ID, messaging } from "../appwrite.config";
+import { formatDateTime, parseStringify } from "../utils";
 import { Appointment } from "@/types/appwrite.types";
 import { revalidatePath } from "next/cache";
+import { log } from "node:console";
 
 export const createAppointment = async (appointment: CreateAppointmentParams) => {
     try {
@@ -94,12 +95,30 @@ export const updateAppointment = async ({ appointmentId, appointment, userId, ty
         }
 
         // Sms Notification
-
+        const smsMessage = `Hi, it's CarePulse.${type === 'schedule' ? `your appointment has been scheduled for 
+        ${formatDateTime(appointment.schedule!).dateTime} with Dr. ${appointment.primaryPhysician}` : 
+        `we regret to inform you that your appointment has been cancelled for the following reason : ${appointment.cancellationReason}`}.`
         revalidatePath('/admin')
+
+        await sendSmsNotification(userId,smsMessage)
 
         return parseStringify(updatedAppointment)
 
     } catch (error) {
         console.log(error)
+    }
+}
+
+export const sendSmsNotification = async (userId: string, content: string) => {
+    try {
+        const message = await messaging.createSms(
+            ID.unique(),
+            content,
+            [],
+            [userId]
+        )
+    } catch (error) {
+        console.log(error);
+
     }
 }
